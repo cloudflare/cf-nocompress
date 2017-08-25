@@ -1,0 +1,91 @@
+diff --git a/src/http/modules/ngx_http_gzip_filter_module.c b/src/http/modules/ngx_http_gzip_filter_module.c
+index c94b12f..20b4d01 100644
+--- a/src/http/modules/ngx_http_gzip_filter_module.c
++++ b/src/http/modules/ngx_http_gzip_filter_module.c
+@@ -9,6 +9,13 @@
+ #include <ngx_core.h>
+ #include <ngx_http.h>
+ 
++/**
++ * Only enable cf_nocompress additions if compiling with cf_nocompress module
++ */
++#ifdef CF_NOCOMPRESS_MODULE
++#include <cf_nocompress_module.h>
++#endif //CF_NOCOMPRESS_MODULE
++
+ #include <zlib.h>
+ 
+ 
+@@ -60,6 +67,11 @@ typedef struct {
+     unsigned             gzheader:1;
+     unsigned             buffering:1;
+ 
++
++#ifdef CF_NOCOMPRESS_MODULE
++    unsigned             no_compress_mode:1;
++#endif //CF_NOCOMPRESS_MODULE
++
+     size_t               zin;
+     size_t               zout;
+ 
+@@ -716,6 +728,30 @@ ngx_http_gzip_filter_gzheader(ngx_http_request_t *r, ngx_http_gzip_ctx_t *ctx)
+ }
+ 
+ 
++#ifdef CF_NOCOMPRESS_MODULE
++
++static ngx_int_t
++ngx_http_gzip_can_compress(ngx_http_gzip_ctx_t *ctx, cf_nocompress_ctx_t* ncctx) {
++    unsigned int i;
++    void* cur;
++
++    if (ncctx == NULL || ncctx->indices == NULL) {
++        return 1;
++    }
++
++    for (i = 0; i < ncctx->indices->nelts; i++) {
++        cur = ((void**)ncctx->indices->elts)[i];
++        if (cur == ctx->in->buf) {
++            return 0;
++        }
++    }
++
++    return 1;
++}
++
++#endif //CF_NOCOMPRESS_MODULE
++
++
+ static ngx_int_t
+ ngx_http_gzip_filter_add_data(ngx_http_request_t *r, ngx_http_gzip_ctx_t *ctx)
+ {
+@@ -730,6 +766,29 @@ ngx_http_gzip_filter_add_data(ngx_http_request_t *r, ngx_http_gzip_ctx_t *ctx)
+         return NGX_DECLINED;
+     }
+ 
++
++    #ifdef CF_NOCOMPRESS_MODULE
++
++    /* Defined here to avoid needing to change code if module is disabled */
++    ngx_http_gzip_conf_t *conf = ngx_http_get_module_loc_conf(r, ngx_http_gzip_filter_module);
++    cf_nocompress_ctx_t* ncctx = ngx_http_get_module_ctx(r, cf_nocompress_module);
++
++    if (!ngx_http_gzip_can_compress(ctx, ncctx) && ctx->no_compress_mode == 0) {
++        deflateParams(&ctx->zstream, Z_NO_COMPRESSION, Z_DEFAULT_STRATEGY);
++        ctx->flush = Z_SYNC_FLUSH;
++        ctx->no_compress_mode = 1;
++        return NGX_OK;
++    }
++
++    if (ctx->no_compress_mode == 1&& ngx_http_gzip_can_compress(ctx, ncctx)) {
++        deflateParams(&ctx->zstream, (int) conf->level, Z_DEFAULT_STRATEGY);
++        ctx->flush = Z_SYNC_FLUSH;
++        ctx->no_compress_mode = 0;
++        return NGX_OK;
++    }
++
++    #endif //CF_NOCOMPRESS_MODULE
++
+     if (ctx->copy_buf) {
+ 
+         /*

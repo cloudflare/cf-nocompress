@@ -1,0 +1,43 @@
+ngx_feature="cf_nocompress"
+ngx_feature_libs="-lsregex"
+ngx_feature_incs="#include <sregex/sregex.h>"
+ngx_feature_test="sre_regex_t        *re;
+                  sre_program_t      *prog;
+                  sre_pool_t         *pool;
+                  u_char              s[] = {'a', 'b', 'c'};
+                  sre_int_t           rc, err_offset, ovector;
+                  sre_int_t          *pending_matched;
+                  sre_uint_t          ncaps;
+                  sre_vm_pike_ctx_t  *pctx;
+                  pool = sre_create_pool(1024);
+                  re = sre_regex_parse(pool, s, &ncaps, 0, &err_offset);
+                  prog = sre_regex_compile(pool, re);
+                  pctx = sre_vm_pike_create_ctx(pool, prog, &ovector, 0);
+                  rc = sre_vm_pike_exec(pctx, s, 32, 1, &pending_matched);
+                  sre_destroy_pool(pool)"
+
+NOCOMPRESS_FILTER_SRCS="$ngx_addon_dir/src/cf_nocompress_module.c \
+                     $ngx_addon_dir/src/cf_nocompress_flag.c \
+                     $ngx_addon_dir/src/cf_nocompress_parse.c \
+                     $ngx_addon_dir/src/cf_nocompress_out.c \
+                     $ngx_addon_dir/src/cf_nocompress_conf.c \
+                     $ngx_addon_dir/src/cf_nocompress_util.c"
+
+NOCOMPRESS_FILTER_DEPS="$ngx_addon_dir/src/cf_nocompress_module.h \
+                     $ngx_addon_dir/src/cf_nocompress_flag.h \
+                     $ngx_addon_dir/src/cf_nocompress_parse.h \
+                     $ngx_addon_dir/src/cf_nocompress_out.h \
+                     $ngx_addon_dir/src/cf_nocompress_conf.h \
+                     $ngx_addon_dir/src/cf_nocompress_ctx.h \
+                     $ngx_addon_dir/src/cf_nocompress_util.h"
+
+HTTP_INCS="$HTTP_INCS $ngx_addon_dir/src/"
+CORE_INCS="$CORE_INCS $ngx_addon_dir/src/"
+CORE_LIBS="$CORE_LIBS $ngx_feature_libs"
+
+NGX_ADDON_SRCS="$NGX_ADDON_SRCS $NOCOMPRESS_FILTER_SRCS"
+NGX_ADDON_DEPS="$NGX_ADDON_DEPS $NOCOMPRESS_FILTER_DEPS"
+
+HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES cf_nocompress_module"
+
+have=CF_NOCOMPRESS_MODULE . auto/have
