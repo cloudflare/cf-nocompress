@@ -20,8 +20,8 @@ void* cf_nocompress_create_loc_conf(ngx_conf_t *cf) {
         return NULL;
     }
 
-    //Disabled by default
-    conf->enabled = 0;
+    //Enabled by default
+    conf->enabled = 1;
 
     ngx_array_init(&conf->multi_flags, cf->pool, 4, sizeof(int));
     ngx_array_init(&conf->regexes, cf->pool, 4, sizeof(u_char *));
