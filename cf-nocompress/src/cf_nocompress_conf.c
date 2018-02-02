@@ -51,8 +51,8 @@ char* cf_nocompress_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child) {
 
         dd("parsing and compiling %d regexes", (int) conf->regexes.nelts);
 
-        //Sets the default state of the module to a NOOP
-        conf->enabled = 0;
+        //Sets the default state of the module to a
+
 
         ppool = sre_create_pool(1024);
 
