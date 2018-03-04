@@ -12,8 +12,8 @@ Below is a sample NGINX configuration
 
 ```
 location /my_token {
-    gzip on;
-	default_type text/html;
+	gzip on;
+    default_type text/html;
 	cf_no_compress 'TK[0-9A-F]+';
 	content_by_lua '
 		local str = require "resty.string"
