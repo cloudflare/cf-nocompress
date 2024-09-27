@@ -333,7 +333,7 @@ ngx_int_t cf_nocompress_parse(ngx_http_request_t *r,
             }
 
             if (cl) {
-                dd("splitted ctx->pending into ctx->out and ctx->pending: %d",
+                dd("split ctx->pending into ctx->out and ctx->pending: %d",
                     (int) ctx->total_buffered);
                 ctx->pending = cl;
                 ctx->last_pending = last;
@@ -350,7 +350,7 @@ ngx_int_t cf_nocompress_parse(ngx_http_request_t *r,
                 if (cl) {
                     ctx->total_buffered -= (size_t) (ctx->stream_pos - mfrom);
 
-                    dd("splitted ctx->pending into ctx->pending and ctx->free");
+                    dd("split ctx->pending into ctx->pending and ctx->free");
                     *last = ctx->free;
                     ctx->free = cl;
                 }
